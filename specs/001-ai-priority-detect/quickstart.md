@@ -14,15 +14,18 @@ docker compose exec web rails db:migrate
 ### 2. Task モデル更新
 
 `app/models/task.rb` のコールバックを修正:
-- `after_create`: `!priority_manually_set` かつタイトル3文字以上の場合のみ推論（priority は enum default で常に medium が入るため nil にはならない。フォームで未選択時は空文字を送信→コントローラで `:priority` パラメータを除外して AI 推論対象にする）
-- `after_update`: タイトル変更 かつ `!priority_manually_set` の場合のみ再推論
+- `after_create`: 提案・優先度が両方必要 → `call_combined`、どちらか一方のみ → `call` / `call_priority`（priority は enum default で常に medium。フォームで未選択時は空文字→コントローラで `:priority` を除外→AI 推論対象）
+- `after_update`: タイトル変更時のみ実行。`!priority_manually_set` なら `call_combined`、手動設定済みなら `call`（提案のみ）
 
 ### 3. TaskCompletionService 拡張
 
-`app/services/task_completion_service.rb` に `call_priority` メソッドを追加:
-- Claude に優先度推論用プロンプトを送信
-- `"high"` / `"medium"` / `"low"` を返す
-- 3 秒タイムアウト + エラー時 `"medium"` フォールバック
+`app/services/task_completion_service.rb` に以下のメソッドを追加:
+
+- `call_priority`: 優先度のみを推論してタスクに保存（3秒タイムアウト）
+- `call_combined`: 提案文と優先度を1回のAPI呼び出しで取得しタスクに保存（4秒タイムアウト・JSON形式で返却）
+  - 補完と優先度推論が両方必要な場合（最多パス）に使用
+  - API呼び出しを2回→1回に削減しレスポンスタイムを改善
+- エラー時はフォールバック値（提案: DEFAULT_MESSAGE、優先度: `"medium"`）
 
 ### 4. TasksController 更新
 
@@ -37,7 +40,7 @@ docker compose exec web rails db:migrate
 ### 6. テスト追加
 
 - `test/models/task_test.rb`: AI 推論コールバックのテスト
-- `test/services/task_completion_service_test.rb`: `call_priority` メソッドのテスト
+- `test/services/task_completion_service_test.rb`: `call_priority` / `call_combined` メソッドのテスト
 - `test/controllers/tasks_controller_test.rb`: 手動設定フラグの動作テスト
 
 ## 動作確認手順

@@ -54,6 +54,38 @@ class TaskCompletionServiceTest < ActiveSupport::TestCase
     end
   end
 
+  # call_combined（提案＋優先度を1回のAPI呼び出しで取得・タスク保存あり）
+  test "call_combined: API成功時にai_suggestionとpriorityが更新される" do
+    stub_anthropic_combined_response("テスト提案", "high") do
+      TaskCompletionService.new(@task).call_combined
+      assert_equal "テスト提案", @task.reload.ai_suggestion
+      assert_equal "high", @task.reload.priority
+    end
+  end
+
+  test "call_combined: APIがJSON以外を返した場合はデフォルトメッセージが保存される" do
+    with_env("ANTHROPIC_API_KEY" => "test-key") do
+      mock_client = Minitest::Mock.new
+      mock_client.expect(:messages, { "content" => [{ "text" => "不正なレスポンス" }] }) { true }
+      Anthropic::Client.stub(:new, mock_client) do
+        TaskCompletionService.new(@task).call_combined
+        assert_equal TaskCompletionService::DEFAULT_MESSAGE, @task.reload.ai_suggestion
+      end
+      mock_client.verify
+    end
+  end
+
+  test "call_combined: タイムアウト時にデフォルトメッセージが保存される" do
+    timeout_client = Object.new
+    timeout_client.define_singleton_method(:messages) { |**_| raise Timeout::Error }
+    with_env("ANTHROPIC_API_KEY" => "test-key") do
+      Anthropic::Client.stub(:new, timeout_client) do
+        assert_nothing_raised { TaskCompletionService.new(@task).call_combined }
+      end
+    end
+    assert_equal TaskCompletionService::DEFAULT_MESSAGE, @task.reload.ai_suggestion
+  end
+
   # call_priority（優先度推論・タスク保存あり）
   test "call_priority: API成功時にpriorityが更新される（high）" do
     stub_anthropic_priority_response("high") do

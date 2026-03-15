@@ -35,6 +35,20 @@ class ActiveSupport::TestCase
       end
     end
   end
+  # 提案と優先度を1回の combined API 呼び出しとしてスタブする
+  def stub_anthropic_combined_response(suggestion, priority)
+    json_text = { "suggestion" => suggestion, "priority" => priority }.to_json
+    mock_client = Minitest::Mock.new
+    mock_client.expect(:messages, { "content" => [{ "text" => json_text }] }) do |_params|
+      true
+    end
+    with_env("ANTHROPIC_API_KEY" => "test-key") do
+      Anthropic::Client.stub(:new, mock_client) do
+        yield
+      end
+    end
+    mock_client.verify
+  end
 end
 
 class ActionDispatch::IntegrationTest

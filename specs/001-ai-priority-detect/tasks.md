@@ -27,8 +27,8 @@
 **⚠️ CRITICAL**: このフェーズ完了まで US1〜US3 の実装は開始しない
 
 - [x] T002 Docker コンテナ内でマイグレーションを実行する `docker compose exec web rails db:migrate`
-- [x] T003 [P] `TaskCompletionService` に `call_priority(title, description)` メソッドを追加する `app/services/task_completion_service.rb`（入力サニタイズ・3秒タイムアウト・"medium" フォールバック含む）
-- [x] T004 [P] `call_priority` のユニットテストを追加する `test/services/task_completion_service_test.rb`（Minitest::Mock で Anthropic::Client をスタブ、成功・タイムアウト・エラーの3ケース）
+- [x] T003 [P] `TaskCompletionService` に `call_priority` / `call_combined` メソッドを追加する `app/services/task_completion_service.rb`（入力サニタイズ・タイムアウト・フォールバック含む。`call_combined` は提案+優先度を1回のAPI呼び出しでJSON取得し2回呼び出しを廃止）
+- [x] T004 [P] `call_priority` / `call_combined` のユニットテストを追加する `test/services/task_completion_service_test.rb`（Minitest::Mock で Anthropic::Client をスタブ、成功・タイムアウト・エラー・JSON不正のケース）
 
 **Checkpoint**: `docker compose exec web rails test test/services/task_completion_service_test.rb` が全件パス
 
@@ -42,7 +42,7 @@
 
 ### Implementation
 
-- [x] T005 [US1] `Task` モデルの `after_create` コールバックを修正し、`!priority_manually_set` かつタイトル3文字以上の場合のみ `call_priority` を呼び出す `app/models/task.rb`（priority は enum の default で常に medium が入るため nil チェックは不要）
+- [x] T005 [US1] `Task` モデルの `after_create` コールバックを修正し、補完+優先度が両方必要な場合は `call_combined`、どちらか一方のみの場合は `call` / `call_priority` を呼び出す `app/models/task.rb`（priority は enum default で常に medium。nil チェック不要）
 - [x] T006 [US1] 新規作成フォームの priority select に `include_blank: "優先度を選択（任意）"` を追加し、デフォルト未選択にする `app/views/tasks/_form.html.erb`
 
 ### Tests
@@ -82,7 +82,7 @@
 
 ### Implementation
 
-- [x] T013 [US3] `Task` モデルの `after_update` コールバックを修正し、`saved_change_to_title?` かつ `!priority_manually_set` の場合のみ `call_priority` を呼び出す `app/models/task.rb`
+- [x] T013 [US3] `Task` モデルの `after_update` コールバックを修正し、タイトル変更時のみ実行。`!priority_manually_set` なら `call_combined`、手動設定済みなら `call`（提案のみ）を呼び出す `app/models/task.rb`
 - [x] T014 [US3] `update` アクションに優先度変更検出を追加する `app/controllers/tasks_controller.rb`（`task_params[:priority]` が現在値と異なる場合に `priority_manually_set: true` を付加）
 
 ### Tests
@@ -97,7 +97,7 @@
 ## Phase 6: Polish & Cross-Cutting Concerns
 
 - [x] T017 quickstart.md の動作確認手順を Docker 内で実施し、3 つのユーザーストーリーが期待通り動作することを確認する
-- [x] T018 [P] CLAUDE.md のテストセクションを更新し `call_priority` テストを反映する `CLAUDE.md`
+- [x] T018 [P] CLAUDE.md のテストセクションおよびAI統合の説明を更新し `call_priority` / `call_combined` を反映する `CLAUDE.md`
 
 ---
 
@@ -129,8 +129,8 @@
 
 ```bash
 # T003 と T004 は異なるファイルを対象とするため並列実行可能:
-Task T003: "add call_priority to app/services/task_completion_service.rb"
-Task T004: "add call_priority tests to test/services/task_completion_service_test.rb"
+Task T003: "add call_priority / call_combined to app/services/task_completion_service.rb"
+Task T004: "add call_priority / call_combined tests to test/services/task_completion_service_test.rb"
 ```
 
 ---
@@ -140,7 +140,7 @@ Task T004: "add call_priority tests to test/services/task_completion_service_tes
 ### MVP First (User Story 1 のみ)
 
 1. Phase 1: マイグレーション作成
-2. Phase 2: `call_priority` メソッド + テスト（T001〜T004）
+2. Phase 2: `call_priority` / `call_combined` メソッド + テスト（T001〜T004）
 3. Phase 3: US1 実装 + テスト（T005〜T008）
 4. **STOP & VALIDATE**: `rails test` 全件パス、ブラウザで動作確認
 

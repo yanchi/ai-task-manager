@@ -7,8 +7,8 @@
 
 タスク作成・更新時に Anthropic Claude API を使ってタイトル・説明から優先度（high/medium/low）を
 自動推論する。`tasks` テーブルに `priority_manually_set` フラグを追加し、ユーザーの手動設定を
-AI 再推論が上書きしないよう制御する。既存の `TaskCompletionService` に `call_priority` メソッドを
-追加して実装する（新規サービスクラスは作成しない）。
+AI 再推論が上書きしないよう制御する。既存の `TaskCompletionService` に `call_priority` / `call_combined` メソッドを
+追加して実装する（新規サービスクラスは作成しない）。補完と優先度推論が両方必要な場合は `call_combined` で1回の API 呼び出しに統合。
 
 ## Technical Context
 
@@ -18,7 +18,7 @@ AI 再推論が上書きしないよう制御する。既存の `TaskCompletionS
 **Testing**: Minitest 5.25
 **Target Platform**: Docker Compose（開発）/ さくら VPS Ubuntu 22.04（本番）
 **Project Type**: Web application (Rails MVC)
-**Performance Goals**: タスク作成の所要時間増加 5 秒未満（AI 推論タイムアウト 3 秒）
+**Performance Goals**: タスク作成の所要時間増加 5 秒未満（`call_combined` で1回のAPI呼び出し・タイムアウト4秒）
 **Constraints**: 同期処理のみ（非同期ジョブ不使用）、フォールバック値「中」
 **Scale/Scope**: 個人利用ポートフォリオ、数十〜数百タスク程度
 
@@ -28,11 +28,11 @@ AI 再推論が上書きしないよう制御する。既存の `TaskCompletionS
 
 | 原則 | 判定 | 根拠 |
 |------|------|------|
-| I. AI Integration as First-Class Feature | ✅ PASS | `call_priority` を `TaskCompletionService` に集約。モデル・コントローラーに API ロジックを持ち込まない |
+| I. AI Integration as First-Class Feature | ✅ PASS | `call_priority` / `call_combined` を `TaskCompletionService` に集約。モデル・コントローラーに API ロジックを持ち込まない |
 | II. User Data Isolation (NON-NEGOTIABLE) | ✅ PASS | 認可ロジック変更なし。既存の `current_user.tasks.find` を維持 |
 | III. Simplicity & MVP | ✅ PASS | 新規サービスクラス作成なし。既存 `TaskCompletionService` にメソッド追加のみ |
 | IV. Security & Injection Prevention | ✅ PASS | タイトルは既存サニタイズ処理（truncate + 制御文字除去）を再利用 |
-| V. Test Coverage for Critical Paths | ✅ PASS | `call_priority` のユニットテスト、コントローラーテスト（手動フラグ）を追加必須 |
+| V. Test Coverage for Critical Paths | ✅ PASS | `call_priority` / `call_combined` のユニットテスト、コントローラーテスト（手動フラグ）を追加必須 |
 
 **Post-Design Re-check**: `priority_manually_set` カラム追加はスキーマ変更のため、
 Constitution の Quality Gates「スキーマ変更: Rails マイグレーションを必ず作成」に従いマイグレーションファイルを作成する。
@@ -57,7 +57,7 @@ app/
 ├── models/
 │   └── task.rb                         # コールバック修正
 ├── services/
-│   └── task_completion_service.rb      # call_priority メソッド追加
+│   └── task_completion_service.rb      # call_priority / call_combined メソッド追加
 ├── controllers/
 │   └── tasks_controller.rb             # update アクションに手動フラグ検出追加
 └── views/tasks/
@@ -68,7 +68,7 @@ db/migrate/
 
 test/
 ├── models/task_test.rb                 # AI 推論コールバックテスト追加
-├── services/task_completion_service_test.rb  # call_priority テスト追加
+├── services/task_completion_service_test.rb  # call_priority / call_combined テスト追加
 └── controllers/tasks_controller_test.rb      # 手動フラグ動作テスト追加
 ```
 

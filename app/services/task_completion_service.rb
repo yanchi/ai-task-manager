@@ -6,13 +6,21 @@ class TaskCompletionService
   MODEL = "claude-haiku-4-5-20251001"
   MAX_TOKENS = 300
   PRIORITY_MAX_TOKENS = 10
+  COMBINED_MAX_TOKENS = 400
   SUGGESTION_TIMEOUT_SECONDS = 4
   PRIORITY_TIMEOUT_SECONDS = 3
+  COMBINED_TIMEOUT_SECONDS = 4
 
   PRIORITY_SYSTEM_PROMPT =
     "あなたはタスク管理アシスタントです。\n" \
     "タスク名と説明を受け取り、優先度を high / medium / low のいずれか1単語のみで答えてください。\n" \
     "他の文字は一切出力しないでください。"
+
+  COMBINED_SYSTEM_PROMPT =
+    "あなたはタスク管理アシスタントです。\n" \
+    "タスク名を受け取り、以下のJSON形式のみで回答してください。改行や説明は不要です。\n" \
+    '{"suggestion":"概要・手順・ポイントを含む200文字以内の日本語テキスト","priority":"high または medium または low"}' \
+    "\n他の文字は一切出力しないでください。"
 
   SYSTEM_PROMPT =
     "あなたはタスク管理アシスタントです。\n" \
@@ -52,6 +60,22 @@ class TaskCompletionService
   rescue => e
     Rails.logger.error "TaskCompletionService#call_priority error: #{e.message}"
     DEFAULT_PRIORITY
+  end
+
+  # 提案と優先度を1回のAPI呼び出しで取得してタスクに保存する
+  def call_combined
+    return unless @task && @title.present? && @title.length >= 3
+    return unless api_key_configured?
+
+    suggestion, priority = fetch_combined(@title, @task.description)
+    @task.update_columns(
+      ai_suggestion: suggestion,
+      priority: Task.priorities[priority],
+      updated_at: Time.current
+    )
+  rescue => e
+    Rails.logger.error "TaskCompletionService#call_combined error: #{e.message}"
+    @task.update_columns(ai_suggestion: DEFAULT_MESSAGE, updated_at: Time.current)
   end
 
   # Ajax リクエスト時に呼び出される（タスク保存なし）
@@ -119,6 +143,39 @@ class TaskCompletionService
   rescue Timeout::Error
     @client = nil  # コネクションが破損している可能性があるためリセット
     raise
+  end
+
+  def fetch_combined(title, description)
+    safe_title = title.gsub(/[^\p{L}\p{N}\p{P}\s]/u, "").truncate(100)
+    content = "タスク名: 【#{safe_title}】"
+    if description.present?
+      safe_desc = description.gsub(/[^\p{L}\p{N}\p{P}\s]/u, "").truncate(200)
+      content += "\n説明: #{safe_desc}"
+    end
+
+    Timeout.timeout(COMBINED_TIMEOUT_SECONDS) do
+      response = client.messages(
+        parameters: {
+          model: MODEL,
+          max_tokens: COMBINED_MAX_TOKENS,
+          system: COMBINED_SYSTEM_PROMPT,
+          messages: [{ role: "user", content: content }]
+        }
+      )
+      text = response.dig("content", 0, "text").to_s
+      parsed = JSON.parse(text)
+      suggestion = parsed["suggestion"].presence || DEFAULT_MESSAGE
+      priority_raw = parsed["priority"].to_s.strip.downcase
+      priority = %w[high medium low].include?(priority_raw) ? priority_raw : DEFAULT_PRIORITY
+      [suggestion, priority]
+    end
+  rescue Timeout::Error
+    @client = nil
+    Rails.logger.warn "TaskCompletionService#fetch_combined timed out"
+    [DEFAULT_MESSAGE, DEFAULT_PRIORITY]
+  rescue JSON::ParseError
+    Rails.logger.warn "TaskCompletionService#fetch_combined invalid JSON response"
+    [DEFAULT_MESSAGE, DEFAULT_PRIORITY]
   end
 
   def api_key_configured?

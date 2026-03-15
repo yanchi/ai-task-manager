@@ -25,16 +25,21 @@ class Task < ApplicationRecord
 
   def run_ai_on_create
     service = TaskCompletionService.new(self)
-    service.call unless ai_suggestion?
-    service.call_priority if needs_priority_inference?
+    if !ai_suggestion? && needs_priority_inference?
+      service.call_combined
+    elsif !ai_suggestion?
+      service.call
+    elsif needs_priority_inference?
+      service.call_priority
+    end
   rescue => e
     Rails.logger.error "AI callback failed on create for task #{id}: #{e.message}"
   end
 
   def run_ai_on_update
+    return unless saved_change_to_title?
     service = TaskCompletionService.new(self)
-    service.call if saved_change_to_title?
-    service.call_priority if should_reinfer_priority?
+    should_reinfer_priority? ? service.call_combined : service.call
   rescue => e
     Rails.logger.error "AI callback failed on update for task #{id}: #{e.message}"
   end

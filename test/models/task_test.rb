@@ -72,7 +72,7 @@ class TaskTest < ActiveSupport::TestCase
   end
 
   test "AI推論成功時にpriorityが更新される" do
-    stub_anthropic_calls("AI補完テスト", "high") do
+    stub_anthropic_combined_response("AI補完テスト", "high") do
       task = @user.tasks.create!(title: "緊急バグ修正")
       assert_equal "high", task.reload.priority
     end
@@ -98,7 +98,7 @@ class TaskTest < ActiveSupport::TestCase
 
   test "AI設定タスクのタイトル変更でpriorityが再推論される" do
     task = @user.tasks.create!(title: "元のタスク", priority_manually_set: false)
-    stub_anthropic_calls("medium", "high") do
+    stub_anthropic_combined_response("更新後の提案", "high") do
       task.update!(title: "緊急対応タスク")
       assert_equal "high", task.reload.priority
     end
