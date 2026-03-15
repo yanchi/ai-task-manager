@@ -54,13 +54,88 @@ class TaskCompletionServiceTest < ActiveSupport::TestCase
     end
   end
 
+  # call_priority（優先度推論・タスク保存あり）
+  test "call_priority: API成功時にpriorityが更新される（high）" do
+    stub_anthropic_priority_response("high") do
+      TaskCompletionService.new(@task).call_priority
+      assert_equal "high", @task.reload.priority
+    end
+  end
+
+  test "call_priority: API成功時にpriorityが更新される（low）" do
+    stub_anthropic_priority_response("low") do
+      TaskCompletionService.new(@task).call_priority
+      assert_equal "low", @task.reload.priority
+    end
+  end
+
+  test "call_priority: APIがhigh/medium/low以外を返した場合はmediumにフォールバック" do
+    stub_anthropic_priority_response("urgent") do
+      TaskCompletionService.new(@task).call_priority
+      assert_equal "medium", @task.reload.priority
+    end
+  end
+
+  test "call_priority: タイムアウト時にタスクは壊れず既存のpriorityが維持される" do
+    original_priority = @task.priority
+    # クライアント生成は成功するが messages 呼び出し中にタイムアウトするクライアント
+    timeout_client = Object.new
+    timeout_client.define_singleton_method(:messages) { |**_| raise Timeout::Error }
+    Anthropic::Client.stub(:new, timeout_client) do
+      assert_nothing_raised { TaskCompletionService.new(@task).call_priority }
+    end
+    assert_equal original_priority, @task.reload.priority
+  end
+
+  test "fetch_suggestionタイムアウト後に@clientがnilにリセットされる" do
+    # @client を非 nil に設定してからタイムアウトさせ、リセットを確認する
+    timeout_client = Object.new
+    timeout_client.define_singleton_method(:messages) { |**_| raise Timeout::Error }
+
+    service = TaskCompletionService.new(@task)
+    service.instance_variable_set(:@client, timeout_client)
+
+    service.send(:fetch_suggestion, "テスト")
+
+    assert_nil service.instance_variable_get(:@client)
+  end
+
+  test "fetch_priorityタイムアウト後に@clientがnilにリセットされる" do
+    # @client を非 nil に設定してからタイムアウトさせ、リセットを確認する
+    timeout_client = Object.new
+    timeout_client.define_singleton_method(:messages) { |**_| raise Timeout::Error }
+
+    service = TaskCompletionService.new(@task)
+    service.instance_variable_set(:@client, timeout_client)
+
+    service.send(:fetch_priority, "テスト", nil) rescue nil
+
+    assert_nil service.instance_variable_get(:@client)
+  end
+
+  test "call_priority: APIキー未設定の場合は何もしない" do
+    with_env("ANTHROPIC_API_KEY" => nil) do
+      result = TaskCompletionService.new(@task).call_priority
+      assert_nil result
+    end
+  end
+
+  test "call_priority: タイトルが3文字未満の場合は何もしない" do
+    @task.title = "ab"
+    result = TaskCompletionService.new(@task).call_priority
+    assert_nil result
+  end
+
   # タイトルサニタイズ（プロンプトインジェクション対策）
   test "100文字を超えるタイトルは切り詰められる" do
     long_title = "あ" * 200
     stub_anthropic_response("提案") do |captured_messages|
       TaskCompletionService.new(nil, long_title).call_with_title
       content = captured_messages.first[:content]
-      assert content.length < long_title.length + 50
+      # プレフィックス(7) + safe_title(最大100) + サフィックス(20) = 最大127文字
+      assert content.length <= 130
+      # truncate が無効なら 200 文字のタイトル分だけで 227 文字超になる
+      assert content.length < long_title.length
     end
   end
 
@@ -88,6 +163,16 @@ class TaskCompletionServiceTest < ActiveSupport::TestCase
 
   def stub_anthropic_error
     Anthropic::Client.stub(:new, ->(_) { raise Anthropic::Error, "API error" }) do
+      yield
+    end
+  end
+
+  def stub_anthropic_priority_response(priority_text)
+    mock_client = Minitest::Mock.new
+    mock_client.expect(:messages, { "content" => [{ "text" => priority_text }] }) do |_params|
+      true
+    end
+    Anthropic::Client.stub(:new, mock_client) do
       yield
     end
   end

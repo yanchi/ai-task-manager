@@ -28,7 +28,10 @@ class TasksController < ApplicationController
 
   # POST /tasks
   def create
-    @task = current_user.tasks.build(task_params)
+    params_with_flag = task_params
+    params_with_flag = params_with_flag.except(:priority) if params_with_flag[:priority].blank?
+    params_with_flag = params_with_flag.merge(priority_manually_set: true) if params_with_flag[:priority].present?
+    @task = current_user.tasks.build(params_with_flag)
 
     if @task.save
       redirect_to tasks_path, notice: "タスクを作成しました。"
@@ -43,9 +46,12 @@ class TasksController < ApplicationController
 
   # PATCH /tasks/:id
   def update
-    title_changed = @task.title != task_params[:title]
-    if @task.update(task_params)
-      TaskCompletionService.new(@task).call if title_changed
+    params_with_flag = task_params
+    if params_with_flag[:priority].present? && params_with_flag[:priority] != @task.priority
+      params_with_flag = params_with_flag.merge(priority_manually_set: true)
+    end
+
+    if @task.update(params_with_flag)
       redirect_to tasks_path, notice: "タスクを更新しました。"
     else
       render :edit, status: :unprocessable_entity

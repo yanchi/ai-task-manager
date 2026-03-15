@@ -1,7 +1,18 @@
+require "timeout"
+
 class TaskCompletionService
   DEFAULT_MESSAGE = "AI補完を利用できませんでした。手動で詳細を入力してください。"
+  DEFAULT_PRIORITY = "medium"
   MODEL = "claude-haiku-4-5-20251001"
   MAX_TOKENS = 300
+  PRIORITY_MAX_TOKENS = 10
+  SUGGESTION_TIMEOUT_SECONDS = 4
+  PRIORITY_TIMEOUT_SECONDS = 3
+
+  PRIORITY_SYSTEM_PROMPT =
+    "あなたはタスク管理アシスタントです。\n" \
+    "タスク名と説明を受け取り、優先度を high / medium / low のいずれか1単語のみで答えてください。\n" \
+    "他の文字は一切出力しないでください。"
 
   SYSTEM_PROMPT =
     "あなたはタスク管理アシスタントです。\n" \
@@ -24,14 +35,23 @@ class TaskCompletionService
     suggestion = fetch_suggestion(@title)
     @task.update_columns(ai_suggestion: suggestion, updated_at: Time.current)
     suggestion
-  rescue Anthropic::Error => e
-    Rails.logger.error "Anthropic API error: #{e.message}"
-    @task.update_column(:ai_suggestion, DEFAULT_MESSAGE)
-    DEFAULT_MESSAGE
   rescue => e
     Rails.logger.error "TaskCompletionService error: #{e.message}"
     @task.update_column(:ai_suggestion, DEFAULT_MESSAGE)
     DEFAULT_MESSAGE
+  end
+
+  # タスク保存時に優先度を推論してタスクに保存する
+  def call_priority
+    return unless @task && @title.present? && @title.length >= 3
+    return unless api_key_configured?
+
+    priority = fetch_priority(@title, @task.description)
+    @task.update_columns(priority: Task.priorities[priority], updated_at: Time.current)
+    priority
+  rescue => e
+    Rails.logger.error "TaskCompletionService#call_priority error: #{e.message}"
+    DEFAULT_PRIORITY
   end
 
   # Ajax リクエスト時に呼び出される（タスク保存なし）
@@ -47,26 +67,55 @@ class TaskCompletionService
 
   private
 
-  def fetch_suggestion(title)
-    client = Anthropic::Client.new(access_token: ENV["ANTHROPIC_API_KEY"])
+  def client
+    @client ||= Anthropic::Client.new(access_token: ENV["ANTHROPIC_API_KEY"])
+  end
 
+  def fetch_suggestion(title)
     safe_title = title.gsub(/[^\p{L}\p{N}\p{P}\s]/u, "").truncate(100)
 
-    response = client.messages(
-      parameters: {
-        model: MODEL,
-        max_tokens: MAX_TOKENS,
-        system: SYSTEM_PROMPT,
-        messages: [
-          {
-            role: "user",
-            content: "タスク名: 【#{safe_title}】\n上記タスクの詳細を補完してください。"
-          }
-        ]
-      }
-    )
+    Timeout.timeout(SUGGESTION_TIMEOUT_SECONDS) do
+      response = client.messages(
+        parameters: {
+          model: MODEL,
+          max_tokens: MAX_TOKENS,
+          system: SYSTEM_PROMPT,
+          messages: [
+            {
+              role: "user",
+              content: "タスク名: 【#{safe_title}】\n上記タスクの詳細を補完してください。"
+            }
+          ]
+        }
+      )
+      response.dig("content", 0, "text") || DEFAULT_MESSAGE
+    end
+  rescue Timeout::Error
+    @client = nil  # コネクションが破損している可能性があるためリセット
+    Rails.logger.warn "TaskCompletionService#fetch_suggestion timed out"
+    DEFAULT_MESSAGE
+  end
 
-    response.dig("content", 0, "text") || DEFAULT_MESSAGE
+  def fetch_priority(title, description)
+    safe_title = title.gsub(/[^\p{L}\p{N}\p{P}\s]/u, "").truncate(100)
+    content = "タスク名: 【#{safe_title}】"
+    content += "\n説明: #{description.truncate(200)}" if description.present?
+
+    Timeout.timeout(PRIORITY_TIMEOUT_SECONDS) do
+      response = client.messages(
+        parameters: {
+          model: MODEL,
+          max_tokens: PRIORITY_MAX_TOKENS,
+          system: PRIORITY_SYSTEM_PROMPT,
+          messages: [{ role: "user", content: content }]
+        }
+      )
+      result = response.dig("content", 0, "text").to_s.strip.downcase
+      %w[high medium low].include?(result) ? result : DEFAULT_PRIORITY
+    end
+  rescue Timeout::Error
+    @client = nil  # コネクションが破損している可能性があるためリセット
+    raise
   end
 
   def api_key_configured?
