@@ -16,7 +16,7 @@ gem "jbuilder"
 gem "devise", "~> 4.9"
 
 # Anthropic API（Claude）
-gem "anthropic", "~> 0.3"
+gem "ruby-anthropic", "~> 0.4"
 
 # ページネーション
 gem "kaminari"

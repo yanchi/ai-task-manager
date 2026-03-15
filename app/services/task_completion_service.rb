@@ -178,7 +178,7 @@ class TaskCompletionService
     @client = nil
     Rails.logger.warn "TaskCompletionService#fetch_combined timed out"
     raise
-  rescue JSON::ParseError => e
+  rescue JSON::ParserError => e
     Rails.logger.warn "TaskCompletionService#fetch_combined invalid JSON response: #{e.message}"
     raise
   end
