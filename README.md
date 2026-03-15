@@ -36,7 +36,6 @@ cp .env.example .env
 ```bash
 # 初回セットアップ
 docker compose build
-docker compose run --rm web rails new . --force --database=postgresql --skip-bundle
 
 # ビルド & 起動
 docker compose up --build
