@@ -49,6 +49,6 @@ class Task < ApplicationRecord
   end
 
   def should_reinfer_priority?
-    saved_change_to_title? && !priority_manually_set?
+    !priority_manually_set?
   end
 end

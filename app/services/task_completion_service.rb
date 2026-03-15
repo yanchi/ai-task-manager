@@ -18,7 +18,7 @@ class TaskCompletionService
 
   COMBINED_SYSTEM_PROMPT =
     "あなたはタスク管理アシスタントです。\n" \
-    "タスク名を受け取り、以下のJSON形式のみで回答してください。改行や説明は不要です。\n" \
+    "タスク名と説明を受け取り、以下のJSON形式のみで回答してください。改行や説明は不要です。\n" \
     '{"suggestion":"概要・手順・ポイントを含む200文字以内の日本語テキスト","priority":"high または medium または low"}' \
     "\n他の文字は一切出力しないでください。"
 

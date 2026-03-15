@@ -28,10 +28,7 @@ class TasksController < ApplicationController
 
   # POST /tasks
   def create
-    params_with_flag = task_params
-    params_with_flag = params_with_flag.except(:priority) unless Task.priorities.key?(params_with_flag[:priority])
-    params_with_flag = params_with_flag.merge(priority_manually_set: true) if Task.priorities.key?(params_with_flag[:priority])
-    @task = current_user.tasks.build(params_with_flag)
+    @task = current_user.tasks.build(normalize_priority_params(task_params))
 
     if @task.save
       redirect_to tasks_path, notice: "タスクを作成しました。"
@@ -46,13 +43,12 @@ class TasksController < ApplicationController
 
   # PATCH /tasks/:id
   def update
-    params_with_flag = task_params
-    params_with_flag = params_with_flag.except(:priority) unless Task.priorities.key?(params_with_flag[:priority])
-    if Task.priorities.key?(params_with_flag[:priority]) && Task.priorities[params_with_flag[:priority]] != Task.priorities[@task.priority]
-      params_with_flag = params_with_flag.merge(priority_manually_set: true)
+    p = normalize_priority_params(task_params)
+    if Task.priorities.key?(p[:priority]) && Task.priorities[p[:priority]] != Task.priorities[@task.priority]
+      p = p.merge(priority_manually_set: true)
     end
 
-    if @task.update(params_with_flag)
+    if @task.update(p)
       redirect_to tasks_path, notice: "タスクを更新しました。"
     else
       render :edit, status: :unprocessable_entity
@@ -115,5 +111,11 @@ class TasksController < ApplicationController
 
   def task_params
     params.require(:task).permit(:title, :description, :ai_suggestion, :due_date, :priority, :completed)
+  end
+
+  # 不正な priority 値を除外し、有効な場合は priority_manually_set: true を付加する
+  def normalize_priority_params(p)
+    return p.except(:priority) unless Task.priorities.key?(p[:priority])
+    p.merge(priority_manually_set: true)
   end
 end
