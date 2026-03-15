@@ -1,0 +1,13 @@
+<% if resource.errors.any? %>
+  <div class="alert alert-danger">
+    <h6 class="alert-heading">
+      <i class="bi bi-exclamation-triangle me-2"></i>
+      <%= resource.errors.count %>件のエラーが発生しました
+    </h6>
+    <ul class="mb-0 small">
+      <% resource.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>

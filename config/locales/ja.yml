@@ -1,0 +1,48 @@
+ja:
+  activerecord:
+    models:
+      user: ユーザー
+      task: タスク
+    attributes:
+      user:
+        email: メールアドレス
+        password: パスワード
+        password_confirmation: パスワード（確認）
+      task:
+        title: タイトル
+        description: 説明
+        ai_suggestion: AI 提案
+        due_date: 締切日
+        priority: 優先度
+        completed: 完了
+    errors:
+      messages:
+        blank: を入力してください
+        too_short: "は%{count}文字以上で入力してください"
+        too_long: "は%{count}文字以下で入力してください"
+        invalid: は不正な値です
+        taken: はすでに使用されています
+
+  helpers:
+    submit:
+      task:
+        create: タスクを作成する
+        update: タスクを更新する
+
+  tasks:
+    priority:
+      low: 低
+      medium: 中
+      high: 高
+
+  devise:
+    sessions:
+      signed_in: "ログインしました。"
+      signed_out: "ログアウトしました。"
+    passwords:
+      send_instructions: "パスワードのリセット方法を数分以内にメールでお送りします。"
+      updated: "パスワードが正しく変更されました。ログインしました。"
+    registrations:
+      signed_up: "アカウント登録が完了しました。"
+      updated: "アカウント情報を変更しました。"
+      destroyed: "アカウントを削除しました。またのご利用をお待ちしております。"

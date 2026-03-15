@@ -1,0 +1,27 @@
+<div class="row justify-content-center mt-5">
+  <div class="col-md-5 col-lg-4">
+    <div class="card border-0 shadow">
+      <div class="card-body p-4">
+        <h4 class="card-title fw-bold mb-4">
+          <i class="bi bi-key me-2 text-primary"></i>パスワードをリセット
+        </h4>
+
+        <%= render "devise/shared/error_messages", resource: resource %>
+
+        <%= form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :post }) do |f| %>
+          <div class="mb-3">
+            <%= f.label :email, "登録済みのメールアドレス", class: "form-label" %>
+            <%= f.email_field :email, autofocus: true, autocomplete: "email",
+                class: "form-control" %>
+          </div>
+
+          <%= f.submit "パスワードリセットのメールを送信", class: "btn btn-primary w-100" %>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="text-center mt-3">
+      <%= link_to "ログインに戻る", new_user_session_path, class: "text-muted small" %>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,89 @@
+<div class="card border-0 shadow-sm">
+  <div class="card-body p-4">
+    <%= form_with(model: task,
+          class: "needs-validation",
+          data: { controller: "ai-form", action: "submit->ai-form#onSubmit" }) do |f| %>
+      <!-- エラーメッセージ -->
+      <% if task.errors.any? %>
+        <div class="alert alert-danger">
+          <h6 class="alert-heading"><i class="bi bi-exclamation-triangle me-2"></i>入力エラー</h6>
+          <ul class="mb-0 small">
+            <% task.errors.full_messages.each do |message| %>
+              <li><%= message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <!-- タイトル -->
+      <div class="mb-3">
+        <%= f.label :title, "タスクタイトル *", class: "form-label fw-semibold" %>
+        <%= f.text_field :title,
+            class: "form-control",
+            placeholder: "例: 週次レポートを作成する",
+            required: true,
+            data: { ai_form_target: "title", action: "input->ai-form#onTitleInput" } %>
+        <div class="form-text text-muted">
+          <i class="bi bi-robot me-1"></i>タイトルを入力すると、AI が詳細を自動補完します
+        </div>
+      </div>
+
+      <%= f.hidden_field :ai_suggestion, data: { ai_form_target: "aiSuggestion" } %>
+
+      <!-- AI プレビューエリア -->
+      <div class="mb-3" style="display: none;" data-ai-form-target="preview">
+        <div class="bg-light rounded p-3 border-start border-primary border-3">
+          <div class="d-flex align-items-center mb-2">
+            <div class="spinner-border spinner-border-sm text-primary me-2"
+                 style="display: none;"
+                 data-ai-form-target="loading"></div>
+            <i class="bi bi-robot text-primary me-2" data-ai-form-target="icon"></i>
+            <span class="text-primary fw-semibold small">AI 提案プレビュー</span>
+          </div>
+          <p class="mb-0 small text-secondary"
+             style="white-space: pre-line;"
+             data-ai-form-target="suggestionText"></p>
+          <button type="button"
+                  class="btn btn-sm btn-outline-primary mt-2"
+                  style="display: none;"
+                  data-ai-form-target="useButton"
+                  data-action="click->ai-form#usesuggestion">
+            <i class="bi bi-clipboard-check me-1"></i>説明に使用する
+          </button>
+        </div>
+      </div>
+
+      <!-- 説明 -->
+      <div class="mb-3">
+        <%= f.label :description, "説明（任意）", class: "form-label fw-semibold" %>
+        <%= f.text_area :description,
+            class: "form-control",
+            rows: 3,
+            placeholder: "タスクの詳細を入力してください（AI が補完したものを編集することもできます）",
+            data: { ai_form_target: "description" } %>
+      </div>
+
+      <!-- 締切日と優先度 -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-6">
+          <%= f.label :due_date, "締切日（任意）", class: "form-label fw-semibold" %>
+          <%= f.date_field :due_date, class: "form-control" %>
+        </div>
+        <div class="col-md-6">
+          <%= f.label :priority, "優先度", class: "form-label fw-semibold" %>
+          <%= f.select :priority,
+              [["低", "low"], ["中", "medium"], ["高", "high"]],
+              { selected: task.priority || "medium" },
+              class: "form-select" %>
+        </div>
+      </div>
+
+      <!-- ボタン -->
+      <div class="d-flex gap-2">
+        <%= f.submit task.new_record? ? "タスクを作成する" : "タスクを更新する",
+            class: "btn btn-primary" %>
+        <%= link_to "キャンセル", tasks_path, class: "btn btn-outline-secondary" %>
+      </div>
+    <% end %>
+  </div>
+</div>

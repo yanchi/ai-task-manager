@@ -1,0 +1,57 @@
+# 環境変数（APIキーなどの機密情報）
+.env
+.env.local
+.env.production
+
+# Rails デフォルト
+/.bundle
+/log/*
+/tmp/*
+!/log/.keep
+!/tmp/.keep
+
+# 一時ファイル
+/tmp/cache
+/tmp/pids
+/tmp/sockets
+
+# データベース
+/db/*.sqlite3
+/db/*.sqlite3-journal
+/db/*.sqlite3.bak
+
+# Asset
+/public/assets
+/public/packs
+
+# Node modules
+/node_modules
+yarn-error.log
+yarn.lock
+
+# テスト
+/coverage/
+/spec/reports/
+/spec/examples.txt
+
+# 設定ファイル（機密）
+/config/credentials/*.key
+/config/master.key
+/config/credentials.yml.enc
+
+# Active Storage
+/storage/*
+!/storage/.keep
+
+# Bundler
+/vendor/bundle
+
+# エディタ
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Docker
+.docker-compose.override.yml

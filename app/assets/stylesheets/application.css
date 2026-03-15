@@ -1,0 +1,39 @@
+/*
+ * This is a manifest file that'll be compiled into application.css, which will include all the files
+ * listed below.
+ *
+ *= require_tree .
+ *= require_self
+ */
+
+/* カスタムスタイル */
+body {
+  font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+}
+
+/* タスクカードのホバーエフェクト */
+.card:hover {
+  transition: box-shadow 0.2s ease;
+}
+
+/* 完了済みタスクのストライク */
+.task-completed .card-body {
+  background-color: #f8f9fa;
+}
+
+/* AI 提案エリアのアニメーション */
+#ai_suggestion_preview {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* レスポンシブ調整 */
+@media (max-width: 576px) {
+  .navbar-brand {
+    font-size: 1rem;
+  }
+}

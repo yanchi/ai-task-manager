@@ -1,0 +1,25 @@
+shopping:
+  user: alice
+  title: 買い物をする
+  description: スーパーで食材を買う
+  priority: medium
+  completed: false
+
+report:
+  user: alice
+  title: レポートを書く
+  priority: high
+  completed: false
+  ai_suggestion: "概要: レポートを作成する"
+
+done_task:
+  user: alice
+  title: 完了済みタスク
+  priority: low
+  completed: true
+
+bob_task:
+  user: bob
+  title: ボブのタスク
+  priority: medium
+  completed: false

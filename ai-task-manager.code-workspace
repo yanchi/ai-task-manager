@@ -1,0 +1,46 @@
+{
+  "folders": [
+    {
+      "name": "AI タスク管理アプリ",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "files.encoding": "utf8",
+    "files.eol": "\n",
+    "editor.formatOnSave": true,
+    "files.exclude": {
+      "**/.git": true,
+      "**/tmp": true,
+      "**/log": true,
+      "**/node_modules": true
+    },
+    "search.exclude": {
+      "**/tmp": true,
+      "**/log": true,
+      "**/node_modules": true,
+      "**/.bundle": true
+    },
+    "emmet.includeLanguages": {
+      "erb": "html"
+    },
+    "[ruby]": {
+      "editor.tabSize": 2
+    },
+    "[erb]": {
+      "editor.tabSize": 2
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "Shopify.ruby-lsp",
+      "kaiwood.endwise",
+      "hoovercj.ruby-linter",
+      "bung87.rails",
+      "rebornix.ruby",
+      "ms-azuretools.vscode-docker"
+    ]
+  }
+}

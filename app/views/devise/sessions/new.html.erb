@@ -1,0 +1,48 @@
+<div class="row justify-content-center mt-5">
+  <div class="col-md-5 col-lg-4">
+    <div class="text-center mb-4">
+      <i class="bi bi-check2-circle display-3 text-primary"></i>
+      <h2 class="fw-bold mt-2">AI タスク管理</h2>
+      <p class="text-muted">ログインしてタスクを管理しましょう</p>
+    </div>
+
+    <div class="card border-0 shadow">
+      <div class="card-body p-4">
+        <h4 class="card-title fw-bold mb-4">ログイン</h4>
+
+        <%= render "devise/shared/error_messages", resource: resource %>
+
+        <%= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
+          <div class="mb-3">
+            <%= f.label :email, "メールアドレス", class: "form-label" %>
+            <%= f.email_field :email, autofocus: true, autocomplete: "email",
+                class: "form-control", placeholder: "example@email.com" %>
+          </div>
+
+          <div class="mb-3">
+            <%= f.label :password, "パスワード", class: "form-label" %>
+            <%= f.password_field :password, autocomplete: "current-password",
+                class: "form-control", placeholder: "パスワードを入力" %>
+          </div>
+
+          <div class="mb-3">
+            <%= f.check_box :remember_me, class: "form-check-input", id: "remember_me" %>
+            <%= f.label :remember_me, "ログイン状態を保持する", class: "form-check-label", for: "remember_me" %>
+          </div>
+
+          <%= f.submit "ログイン", class: "btn btn-primary w-100" %>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="text-center mt-3">
+      <p class="text-muted small">
+        アカウントをお持ちでない方は
+        <%= link_to "新規登録", new_user_registration_path %>
+      </p>
+      <p class="text-muted small">
+        <%= link_to "パスワードを忘れた方はこちら", new_user_password_path %>
+      </p>
+    </div>
+  </div>
+</div>
