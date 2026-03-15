@@ -81,8 +81,10 @@ class TaskCompletionServiceTest < ActiveSupport::TestCase
     # クライアント生成は成功するが messages 呼び出し中にタイムアウトするクライアント
     timeout_client = Object.new
     timeout_client.define_singleton_method(:messages) { |**_| raise Timeout::Error }
-    Anthropic::Client.stub(:new, timeout_client) do
-      assert_nothing_raised { TaskCompletionService.new(@task).call_priority }
+    with_env("ANTHROPIC_API_KEY" => "test-key") do
+      Anthropic::Client.stub(:new, timeout_client) do
+        assert_nothing_raised { TaskCompletionService.new(@task).call_priority }
+      end
     end
     assert_equal original_priority, @task.reload.priority
   end

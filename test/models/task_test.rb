@@ -79,9 +79,11 @@ class TaskTest < ActiveSupport::TestCase
   end
 
   test "AI推論エラー時もタスク作成は成功する" do
-    Anthropic::Client.stub(:new, ->(_) { raise "API Error" }) do
-      assert_difference "Task.count", 1 do
-        assert_nothing_raised { @user.tasks.create!(title: "テストタスク") }
+    with_env("ANTHROPIC_API_KEY" => "test-key") do
+      Anthropic::Client.stub(:new, ->(_) { raise "API Error" }) do
+        assert_difference "Task.count", 1 do
+          assert_nothing_raised { @user.tasks.create!(title: "テストタスク") }
+        end
       end
     end
   end
