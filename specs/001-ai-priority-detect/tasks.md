@@ -42,7 +42,7 @@
 
 ### Implementation
 
-- [x] T005 [US1] `Task` モデルの `after_create` コールバックを修正し、`priority` が nil かつ `!priority_manually_set` の場合のみ `call_priority` を呼び出す `app/models/task.rb`
+- [x] T005 [US1] `Task` モデルの `after_create` コールバックを修正し、`!priority_manually_set` かつタイトル3文字以上の場合のみ `call_priority` を呼び出す `app/models/task.rb`（priority は enum の default で常に medium が入るため nil チェックは不要）
 - [x] T006 [US1] 新規作成フォームの priority select に `include_blank: "優先度を選択（任意）"` を追加し、デフォルト未選択にする `app/views/tasks/_form.html.erb`
 
 ### Tests
@@ -62,7 +62,7 @@
 
 ### Implementation
 
-- [x] T009 [US2] `task_params` に `priority_manually_set` を追加する `app/controllers/tasks_controller.rb`（strong parameters）
+- [x] T009 [US2] `priority_manually_set` は strong parameters に含めず、サーバーサイドのみで制御する `app/controllers/tasks_controller.rb`（クライアントから任意の値を渡させないためセキュリティ上 strong params から除外）
 - [x] T010 [US2] `create` アクションに手動選択検出を追加する `app/controllers/tasks_controller.rb`（`task_params[:priority].present?` なら `priority_manually_set: true` を付加してからビルド）
 
 ### Tests

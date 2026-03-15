@@ -99,7 +99,10 @@ class TaskCompletionService
   def fetch_priority(title, description)
     safe_title = title.gsub(/[^\p{L}\p{N}\p{P}\s]/u, "").truncate(100)
     content = "タスク名: 【#{safe_title}】"
-    content += "\n説明: #{description.truncate(200)}" if description.present?
+    if description.present?
+      safe_desc = description.gsub(/[^\p{L}\p{N}\p{P}\s]/u, "").truncate(200)
+      content += "\n説明: #{safe_desc}"
+    end
 
     Timeout.timeout(PRIORITY_TIMEOUT_SECONDS) do
       response = client.messages(

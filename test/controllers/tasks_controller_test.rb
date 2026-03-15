@@ -147,6 +147,11 @@ class TasksControllerTest < ActionDispatch::IntegrationTest
     assert_equal "low", task.priority
   end
 
+  test "更新時に空文字priorityを送信してもタスクが更新される" do
+    patch task_path(tasks(:shopping)), params: { task: { title: tasks(:shopping).title, priority: "" } }
+    assert_redirected_to tasks_path
+  end
+
   test "更新時に優先度を変更するとpriority_manually_setがtrueになる" do
     task = tasks(:shopping)
     original_priority = task.priority

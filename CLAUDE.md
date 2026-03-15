@@ -78,7 +78,7 @@ config/
 | テーブル | 主なカラム                                                                                      |
 | -------- | ----------------------------------------------------------------------------------------------- |
 | users    | id, email, encrypted_password                                                                   |
-| tasks    | id, user_id, title, description, ai_suggestion, due_date, priority（0=低/1=中/2=高）, completed |
+| tasks    | id, user_id, title, description, ai_suggestion, due_date, priority（0=低/1=中/2=高）, completed, priority_manually_set（AI設定=false/手動=true） |
 
 ## ルーティング
 

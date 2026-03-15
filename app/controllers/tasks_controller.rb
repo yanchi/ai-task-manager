@@ -47,6 +47,7 @@ class TasksController < ApplicationController
   # PATCH /tasks/:id
   def update
     params_with_flag = task_params
+    params_with_flag = params_with_flag.except(:priority) if params_with_flag[:priority].blank?
     if params_with_flag[:priority].present? && params_with_flag[:priority] != @task.priority
       params_with_flag = params_with_flag.merge(priority_manually_set: true)
     end
