@@ -43,7 +43,7 @@ class ActiveSupport::TestCase
       true
     end
     with_env("ANTHROPIC_API_KEY" => "test-key") do
-      Anthropic::Client.stub(:new, mock_client) do
+      Anthropic::Client.stub(:new, ->(_) { mock_client }) do
         yield
       end
     end
