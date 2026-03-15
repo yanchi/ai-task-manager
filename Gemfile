@@ -29,7 +29,6 @@ gem "tzinfo-data", platforms: %i[windows jruby]
 
 # Asset pipeline
 gem "sprockets-rails"
-gem "cssbundling-rails"
 
 # パフォーマンス
 gem "bootsnap", require: false
