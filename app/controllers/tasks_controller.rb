@@ -28,7 +28,9 @@ class TasksController < ApplicationController
 
   # POST /tasks
   def create
-    @task = current_user.tasks.build(normalize_priority_params(task_params))
+    p = normalize_priority_params(task_params)
+    p = p.merge(priority_manually_set: true) if Task.priorities.key?(p[:priority])
+    @task = current_user.tasks.build(p)
 
     if @task.save
       redirect_to tasks_path, notice: "タスクを作成しました。"
@@ -113,9 +115,8 @@ class TasksController < ApplicationController
     params.require(:task).permit(:title, :description, :ai_suggestion, :due_date, :priority, :completed)
   end
 
-  # 不正な priority 値を除外し、有効な場合は priority_manually_set: true を付加する
+  # 不正な priority 値（空文字・無効値）を除外するサニタイズのみ行う
   def normalize_priority_params(p)
-    return p.except(:priority) unless Task.priorities.key?(p[:priority])
-    p.merge(priority_manually_set: true)
+    Task.priorities.key?(p[:priority]) ? p : p.except(:priority)
   end
 end
