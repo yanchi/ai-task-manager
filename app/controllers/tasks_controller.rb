@@ -28,7 +28,9 @@ class TasksController < ApplicationController
 
   # POST /tasks
   def create
-    @task = current_user.tasks.build(task_params)
+    sanitized = normalize_priority_params(task_params)
+    sanitized = sanitized.merge(priority_manually_set: true) if Task.priorities.key?(sanitized[:priority])
+    @task = current_user.tasks.build(sanitized)
 
     if @task.save
       redirect_to tasks_path, notice: "タスクを作成しました。"
@@ -43,9 +45,12 @@ class TasksController < ApplicationController
 
   # PATCH /tasks/:id
   def update
-    title_changed = @task.title != task_params[:title]
-    if @task.update(task_params)
-      TaskCompletionService.new(@task).call if title_changed
+    sanitized = normalize_priority_params(task_params)
+    if Task.priorities.key?(sanitized[:priority]) && Task.priorities[sanitized[:priority]] != Task.priorities[@task.priority]
+      sanitized = sanitized.merge(priority_manually_set: true)
+    end
+
+    if @task.update(sanitized)
       redirect_to tasks_path, notice: "タスクを更新しました。"
     else
       render :edit, status: :unprocessable_entity
@@ -108,5 +113,10 @@ class TasksController < ApplicationController
 
   def task_params
     params.require(:task).permit(:title, :description, :ai_suggestion, :due_date, :priority, :completed)
+  end
+
+  # 不正な priority 値（空文字・無効値）を除外するサニタイズのみ行う
+  def normalize_priority_params(p)
+    Task.priorities.key?(p[:priority]) ? p : p.except(:priority)
   end
 end

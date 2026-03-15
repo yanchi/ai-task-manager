@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_01_01_000002) do
+ActiveRecord::Schema[8.0].define(version: 2026_03_15_060429) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -24,6 +24,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_01_000002) do
     t.boolean "completed", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "priority_manually_set", default: false, null: false
     t.index ["user_id", "completed"], name: "index_tasks_on_user_id_and_completed"
     t.index ["user_id", "created_at"], name: "index_tasks_on_user_id_and_created_at"
     t.index ["user_id", "priority"], name: "index_tasks_on_user_id_and_priority"
