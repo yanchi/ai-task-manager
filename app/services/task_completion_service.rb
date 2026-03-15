@@ -154,7 +154,7 @@ class TaskCompletionService
       content += "\n説明: #{safe_desc}"
     end
 
-    Timeout.timeout(COMBINED_TIMEOUT_SECONDS) do
+    text = Timeout.timeout(COMBINED_TIMEOUT_SECONDS) do
       response = client.messages(
         parameters: {
           model: MODEL,
@@ -163,13 +163,13 @@ class TaskCompletionService
           messages: [{ role: "user", content: content }]
         }
       )
-      text = response.dig("content", 0, "text").to_s
-      parsed = JSON.parse(text)
-      suggestion = parsed["suggestion"].presence || DEFAULT_MESSAGE
-      priority_raw = parsed["priority"].to_s.strip.downcase
-      priority = %w[high medium low].include?(priority_raw) ? priority_raw : DEFAULT_PRIORITY
-      [suggestion, priority]
+      response.dig("content", 0, "text").to_s
     end
+    parsed = JSON.parse(text)
+    suggestion = parsed["suggestion"].presence || DEFAULT_MESSAGE
+    priority_raw = parsed["priority"].to_s.strip.downcase
+    priority = %w[high medium low].include?(priority_raw) ? priority_raw : DEFAULT_PRIORITY
+    [suggestion, priority]
   rescue Timeout::Error
     @client = nil
     Rails.logger.warn "TaskCompletionService#fetch_combined timed out"
