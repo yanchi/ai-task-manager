@@ -76,7 +76,7 @@ class TaskCompletionService
   rescue => e
     Rails.logger.error "TaskCompletionService#call_combined error: #{e.message}"
     # priority は更新しない（既存値を維持）。FR-005: 更新時の再推論失敗は既存値を維持する
-    @task.update_columns(ai_suggestion: DEFAULT_MESSAGE, updated_at: Time.current) if @task.ai_suggestion.blank?
+    @task.update_columns(ai_suggestion: DEFAULT_MESSAGE, updated_at: Time.current)
   end
 
   # Ajax リクエスト時に呼び出される（タスク保存なし）
