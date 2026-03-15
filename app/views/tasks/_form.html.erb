@@ -74,7 +74,7 @@
           <%= f.select :priority,
               [["低", "low"], ["中", "medium"], ["高", "high"]],
               { include_blank: task.new_record? ? "優先度を選択（任意）" : false,
-                selected: task.new_record? ? "" : task.priority },
+                selected: (task.new_record? && !task.priority_manually_set) ? "" : task.priority },
               class: "form-select" %>
           <% if task.new_record? %>
             <div class="form-text text-muted">
