@@ -96,6 +96,14 @@ class TaskTest < ActiveSupport::TestCase
     assert task.send(:should_reinfer_priority?)
   end
 
+  test "AI設定タスクのタイトル変更でpriorityが再推論される" do
+    task = @user.tasks.create!(title: "元のタスク", priority_manually_set: false)
+    stub_anthropic_calls("medium", "high") do
+      task.update!(title: "緊急対応タスク")
+      assert_equal "high", task.reload.priority
+    end
+  end
+
   test "手動設定タスクのタイトル変更でshould_reinfer_priorityがfalse" do
     task = @user.tasks.create!(title: "元のタスク", priority_manually_set: true)
     task.title = "変更後のタスク"

@@ -169,6 +169,16 @@ class TasksControllerTest < ActionDispatch::IntegrationTest
     assert_equal "high", task.reload.priority
   end
 
+  test "AI設定タスクのタイトル変更でpriorityが再推論される" do
+    task = tasks(:shopping)
+    task.update_columns(priority_manually_set: false, priority: Task.priorities["medium"])
+    stub_anthropic_calls("AI提案テキスト", "high") do
+      patch task_path(task), params: { task: { title: "緊急対応タスク", priority: "" } }
+    end
+    assert_equal "high", task.reload.priority
+    assert_not task.reload.priority_manually_set
+  end
+
   # ai_suggest
   test "タイトルなしのai_suggestはエラーを返す" do
     post ai_suggest_tasks_path, params: { title: "" }, as: :json
