@@ -29,7 +29,7 @@ class TasksController < ApplicationController
   # POST /tasks
   def create
     params_with_flag = task_params
-    params_with_flag = params_with_flag.except(:priority) if params_with_flag[:priority].blank?
+    params_with_flag = params_with_flag.except(:priority) unless Task.priorities.key?(params_with_flag[:priority])
     params_with_flag = params_with_flag.merge(priority_manually_set: true) if Task.priorities.key?(params_with_flag[:priority])
     @task = current_user.tasks.build(params_with_flag)
 
@@ -47,7 +47,7 @@ class TasksController < ApplicationController
   # PATCH /tasks/:id
   def update
     params_with_flag = task_params
-    params_with_flag = params_with_flag.except(:priority) if params_with_flag[:priority].blank?
+    params_with_flag = params_with_flag.except(:priority) unless Task.priorities.key?(params_with_flag[:priority])
     if Task.priorities.key?(params_with_flag[:priority]) && Task.priorities[params_with_flag[:priority]] != Task.priorities[@task.priority]
       params_with_flag = params_with_flag.merge(priority_manually_set: true)
     end
