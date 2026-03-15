@@ -1,4 +1,8 @@
 require "timeout"
+# NOTE: Timeout.timeout は Thread.raise による強制割り込みのため、Puma 等の
+# マルチスレッド環境では ensure が実行されない等のリスクがある。
+# Anthropic Ruby SDK が接続/読み取りタイムアウトの直接設定を提供していないため
+# 現状は Timeout.timeout で代替しているが、SDK が対応した際は移行を検討すること。
 
 class TaskCompletionService
   DEFAULT_MESSAGE = "AI補完を利用できませんでした。手動で詳細を入力してください。"

@@ -28,9 +28,9 @@ class TasksController < ApplicationController
 
   # POST /tasks
   def create
-    p = normalize_priority_params(task_params)
-    p = p.merge(priority_manually_set: true) if Task.priorities.key?(p[:priority])
-    @task = current_user.tasks.build(p)
+    sanitized = normalize_priority_params(task_params)
+    sanitized = sanitized.merge(priority_manually_set: true) if Task.priorities.key?(sanitized[:priority])
+    @task = current_user.tasks.build(sanitized)
 
     if @task.save
       redirect_to tasks_path, notice: "タスクを作成しました。"
@@ -45,12 +45,12 @@ class TasksController < ApplicationController
 
   # PATCH /tasks/:id
   def update
-    p = normalize_priority_params(task_params)
-    if Task.priorities.key?(p[:priority]) && Task.priorities[p[:priority]] != Task.priorities[@task.priority]
-      p = p.merge(priority_manually_set: true)
+    sanitized = normalize_priority_params(task_params)
+    if Task.priorities.key?(sanitized[:priority]) && Task.priorities[sanitized[:priority]] != Task.priorities[@task.priority]
+      sanitized = sanitized.merge(priority_manually_set: true)
     end
 
-    if @task.update(p)
+    if @task.update(sanitized)
       redirect_to tasks_path, notice: "タスクを更新しました。"
     else
       render :edit, status: :unprocessable_entity
