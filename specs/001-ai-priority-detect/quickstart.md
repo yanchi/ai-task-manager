@@ -14,7 +14,7 @@ docker compose exec web rails db:migrate
 ### 2. Task モデル更新
 
 `app/models/task.rb` のコールバックを修正:
-- `after_create`: 優先度未設定（nil）かつ `!priority_manually_set` の場合のみ推論
+- `after_create`: `!priority_manually_set` かつタイトル3文字以上の場合のみ推論（priority は enum default で常に medium が入るため nil にはならない。フォームで未選択時は空文字を送信→コントローラで `:priority` パラメータを除外して AI 推論対象にする）
 - `after_update`: タイトル変更 かつ `!priority_manually_set` の場合のみ再推論
 
 ### 3. TaskCompletionService 拡張

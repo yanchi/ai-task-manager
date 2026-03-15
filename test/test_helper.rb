@@ -6,6 +6,19 @@ require "minitest/mock"
 class ActiveSupport::TestCase
   fixtures :all
 
+  # テスト実行時は実 API を呼ばないよう API キーを無効化する
+  # （Task のコールバック経由で TaskCompletionService が動くため）
+  setup { ENV.delete("ANTHROPIC_API_KEY") }
+
+  # 環境変数を一時的に差し替えるヘルパー（スタブ内で API キーを有効化する際にも使用）
+  def with_env(vars)
+    original = vars.keys.each_with_object({}) { |k, h| h[k] = ENV[k.to_s] }
+    vars.each { |k, v| v.nil? ? ENV.delete(k.to_s) : ENV[k.to_s] = v }
+    yield
+  ensure
+    original.each { |k, v| v.nil? ? ENV.delete(k.to_s) : ENV[k.to_s] = v }
+  end
+
   # Anthropic::Client をスタブして AI 推論の API 呼び出しを差し替えるヘルパー
   # responses: Array of strings (各 messages 呼び出しに順番に返す)
   def stub_anthropic_calls(*responses)
@@ -16,8 +29,10 @@ class ActiveSupport::TestCase
       call_index += 1
       { "content" => [{ "text" => text }] }
     end
-    Anthropic::Client.stub(:new, ->(_) { stub_client }) do
-      yield
+    with_env("ANTHROPIC_API_KEY" => "test-key") do
+      Anthropic::Client.stub(:new, ->(_) { stub_client }) do
+        yield
+      end
     end
   end
 end

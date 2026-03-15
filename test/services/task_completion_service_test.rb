@@ -141,14 +141,6 @@ class TaskCompletionServiceTest < ActiveSupport::TestCase
 
   private
 
-  def with_env(vars)
-    original = vars.keys.each_with_object({}) { |k, h| h[k] = ENV[k.to_s] }
-    vars.each { |k, v| v.nil? ? ENV.delete(k.to_s) : ENV[k.to_s] = v }
-    yield
-  ensure
-    original.each { |k, v| v.nil? ? ENV.delete(k.to_s) : ENV[k.to_s] = v }
-  end
-
   def stub_anthropic_response(text)
     captured = []
     mock_client = Minitest::Mock.new
@@ -156,15 +148,19 @@ class TaskCompletionServiceTest < ActiveSupport::TestCase
       captured << params[:parameters][:messages].first
       true
     end
-    Anthropic::Client.stub(:new, mock_client) do
-      yield captured
+    with_env("ANTHROPIC_API_KEY" => "test-key") do
+      Anthropic::Client.stub(:new, mock_client) do
+        yield captured
+      end
     end
     mock_client.verify
   end
 
   def stub_anthropic_error
-    Anthropic::Client.stub(:new, ->(_) { raise Anthropic::Error, "API error" }) do
-      yield
+    with_env("ANTHROPIC_API_KEY" => "test-key") do
+      Anthropic::Client.stub(:new, ->(_) { raise Anthropic::Error, "API error" }) do
+        yield
+      end
     end
   end
 
@@ -173,8 +169,10 @@ class TaskCompletionServiceTest < ActiveSupport::TestCase
     mock_client.expect(:messages, { "content" => [{ "text" => priority_text }] }) do |_params|
       true
     end
-    Anthropic::Client.stub(:new, mock_client) do
-      yield
+    with_env("ANTHROPIC_API_KEY" => "test-key") do
+      Anthropic::Client.stub(:new, mock_client) do
+        yield
+      end
     end
     mock_client.verify
   end
