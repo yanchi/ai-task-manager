@@ -47,6 +47,7 @@ class ActiveSupport::TestCase
         yield
       end
     end
+  ensure
     mock_client.verify
   end
 end
