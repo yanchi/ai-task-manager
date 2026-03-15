@@ -45,7 +45,7 @@ class TaskCompletionService
     suggestion
   rescue => e
     Rails.logger.error "TaskCompletionService error: #{e.message}"
-    @task.update_column(:ai_suggestion, DEFAULT_MESSAGE)
+    @task.update_columns(ai_suggestion: DEFAULT_MESSAGE, updated_at: Time.current)
     DEFAULT_MESSAGE
   end
 
