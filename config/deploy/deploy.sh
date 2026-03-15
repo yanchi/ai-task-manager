@@ -13,15 +13,15 @@ cd "$APP_DIR"
 git pull origin main
 
 echo "==> Building production image..."
-docker compose -f docker-compose.production.yml build web
+docker compose --env-file .env.production -f docker-compose.production.yml build web
 
 echo "==> Starting services..."
-docker compose -f docker-compose.production.yml up -d
+docker compose --env-file .env.production -f docker-compose.production.yml up -d
 
 echo "==> Waiting for web to be healthy..."
 sleep 5
 
 echo "==> Running migrations..."
-docker compose -f docker-compose.production.yml exec -T web bundle exec rails db:migrate
+docker compose --env-file .env.production -f docker-compose.production.yml exec -T web bundle exec rails db:migrate
 
 echo "==> Done! App is running at https://task.isl-mentor.com"
