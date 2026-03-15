@@ -75,7 +75,8 @@ class TaskCompletionService
     )
   rescue => e
     Rails.logger.error "TaskCompletionService#call_combined error: #{e.message}"
-    @task.update_columns(ai_suggestion: DEFAULT_MESSAGE, updated_at: Time.current)
+    # priority は更新しない（既存値を維持）。FR-005: 更新時の再推論失敗は既存値を維持する
+    @task.update_columns(ai_suggestion: DEFAULT_MESSAGE, updated_at: Time.current) if @task.ai_suggestion.blank?
   end
 
   # Ajax リクエスト時に呼び出される（タスク保存なし）
@@ -172,10 +173,10 @@ class TaskCompletionService
   rescue Timeout::Error
     @client = nil
     Rails.logger.warn "TaskCompletionService#fetch_combined timed out"
-    [DEFAULT_MESSAGE, DEFAULT_PRIORITY]
-  rescue JSON::ParseError
-    Rails.logger.warn "TaskCompletionService#fetch_combined invalid JSON response"
-    [DEFAULT_MESSAGE, DEFAULT_PRIORITY]
+    raise
+  rescue JSON::ParseError => e
+    Rails.logger.warn "TaskCompletionService#fetch_combined invalid JSON response: #{e.message}"
+    raise
   end
 
   def api_key_configured?

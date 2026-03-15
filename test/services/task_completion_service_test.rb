@@ -75,7 +75,8 @@ class TaskCompletionServiceTest < ActiveSupport::TestCase
     end
   end
 
-  test "call_combined: タイムアウト時にデフォルトメッセージが保存される" do
+  test "call_combined: タイムアウト時にデフォルトメッセージが保存されpriorityは維持される" do
+    original_priority = @task.priority
     timeout_client = Object.new
     timeout_client.define_singleton_method(:messages) { |**_| raise Timeout::Error }
     with_env("ANTHROPIC_API_KEY" => "test-key") do
@@ -84,6 +85,7 @@ class TaskCompletionServiceTest < ActiveSupport::TestCase
       end
     end
     assert_equal TaskCompletionService::DEFAULT_MESSAGE, @task.reload.ai_suggestion
+    assert_equal original_priority, @task.reload.priority
   end
 
   # call_priority（優先度推論・タスク保存あり）
