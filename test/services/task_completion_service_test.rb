@@ -159,6 +159,7 @@ class TaskCompletionServiceTest < ActiveSupport::TestCase
     Anthropic::Client.stub(:new, mock_client) do
       yield captured
     end
+    mock_client.verify
   end
 
   def stub_anthropic_error
@@ -175,5 +176,6 @@ class TaskCompletionServiceTest < ActiveSupport::TestCase
     Anthropic::Client.stub(:new, mock_client) do
       yield
     end
+    mock_client.verify
   end
 end
