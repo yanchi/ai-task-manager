@@ -1,0 +1,30 @@
+FROM ruby:3.3.0
+
+RUN apt-get update -qq && apt-get install -y \
+  nodejs \
+  npm \
+  postgresql-client \
+  && rm -rf /var/lib/apt/lists/*
+
+RUN npm install -g yarn
+
+WORKDIR /app
+
+COPY Gemfile Gemfile.lock ./
+RUN bundle install --without development test
+
+COPY entrypoint.sh /usr/bin/
+RUN chmod +x /usr/bin/entrypoint.sh
+ENTRYPOINT ["entrypoint.sh"]
+
+COPY . .
+
+ENV RAILS_ENV=production
+ENV RAILS_SERVE_STATIC_FILES=true
+ENV RAILS_LOG_TO_STDOUT=true
+
+# ダミーの SECRET_KEY_BASE でアセットをプリコンパイル
+RUN SECRET_KEY_BASE=dummy bundle exec rails assets:precompile
+
+EXPOSE 3000
+CMD ["bundle", "exec", "rails", "server", "-b", "0.0.0.0"]

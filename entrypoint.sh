@@ -2,7 +2,7 @@
 set -e
 
 # PostgreSQL が起動するまで待機
-until pg_isready -h db -U postgres; do
+until pg_isready -h "${DB_HOST:-db}" -U "${DB_USERNAME:-postgres}"; do
   echo "Waiting for PostgreSQL..."
   sleep 1
 done
