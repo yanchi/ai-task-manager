@@ -67,7 +67,7 @@ class TaskCompletionServiceTest < ActiveSupport::TestCase
     with_env("ANTHROPIC_API_KEY" => "test-key") do
       mock_client = Minitest::Mock.new
       mock_client.expect(:messages, { "content" => [{ "text" => "不正なレスポンス" }] }) { true }
-      Anthropic::Client.stub(:new, mock_client) do
+      Anthropic::Client.stub(:new, ->(_) { mock_client }) do
         TaskCompletionService.new(@task).call_combined
         assert_equal TaskCompletionService::DEFAULT_MESSAGE, @task.reload.ai_suggestion
       end
@@ -185,7 +185,7 @@ class TaskCompletionServiceTest < ActiveSupport::TestCase
       true
     end
     with_env("ANTHROPIC_API_KEY" => "test-key") do
-      Anthropic::Client.stub(:new, mock_client) do
+      Anthropic::Client.stub(:new, ->(_) { mock_client }) do
         yield captured
       end
     end
@@ -206,7 +206,7 @@ class TaskCompletionServiceTest < ActiveSupport::TestCase
       true
     end
     with_env("ANTHROPIC_API_KEY" => "test-key") do
-      Anthropic::Client.stub(:new, mock_client) do
+      Anthropic::Client.stub(:new, ->(_) { mock_client }) do
         yield
       end
     end
